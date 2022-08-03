@@ -26,6 +26,8 @@ class ToonBot(Plugin):
             safe_query = urllib.parse.quote(query)
             search_url = api_url + '?q=' + safe_query
             frame = requests.get(search_url).json()[0]
+        except IndexError as err:
+            await evt.respond(f"Search term \"{safe_query}\" was not found.")
         except BaseException as err:
             await evt.respond(f"Error searching for query \"{safe_query}\" at URL \"{search_url}\": {err=}, {type(err)=}")
             raise
@@ -50,26 +52,31 @@ class ToonBot(Plugin):
                     await evt.respond(f"Error getting image from URL \"{meme_url}\": {err=}, {type(err)=}")
                     raise
                 else:
-                    mxc_uri = await self.client.upload_media(meme_binary, mime_type="image/jpeg", filename="image.jpg")
-                    content = MediaMessageEventContent(
-                            msgtype = MessageType.IMAGE,
-                            body = f"image.jpg",
-                            url = ContentURI(f"{mxc_uri}"),
-                            info = ImageInfo(
-                                mimetype = 'image/jpeg',
-                                width = 613,
-                                height = 460,
-                                size = len(meme_binary),
-                                thumbnail_url = ContentURI(f"{mxc_uri}"),
-                                thumbnail_info = ThumbnailInfo(
-                                    mimetype = "image/jpeg",
+                    try:
+                        mxc_uri = await self.client.upload_media(meme_binary, mime_type="image/jpeg", filename="image.jpg")
+                    except BaseException as err:
+                        await evt.respond(f"Error getting image from URL \"{meme_url}\": {err=}, {type(err)=}")
+                        raise
+                    else:
+                        content = MediaMessageEventContent(
+                                msgtype = MessageType.IMAGE,
+                                body = f"image.jpg",
+                                url = ContentURI(f"{mxc_uri}"),
+                                info = ImageInfo(
+                                    mimetype = 'image/jpeg',
                                     width = 613,
                                     height = 460,
-                                    size = len(meme_binary)
+                                    size = len(meme_binary),
+                                    thumbnail_url = ContentURI(f"{mxc_uri}"),
+                                    thumbnail_info = ThumbnailInfo(
+                                        mimetype = "image/jpeg",
+                                        width = 613,
+                                        height = 460,
+                                        size = len(meme_binary)
+                                        )
                                     )
                                 )
-                            )
-                    await evt.respond(content)
+                        await evt.respond(content)
 
     @command.new()
     @command.argument("message", pass_raw=True, required=True)
