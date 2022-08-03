@@ -27,7 +27,7 @@ class ToonBot(Plugin):
             search_url = api_url + '?q=' + safe_query
             frame = requests.get(search_url).json()[0]
         except BaseException as err:
-            await evt.respond(f"Error searching for query \"{safe_query}\" at URL \"{url}\": {err=}, {type(err)=}")
+            await evt.respond(f"Error searching for query \"{safe_query}\" at URL \"{search_url}\": {err=}, {type(err)=}")
             raise
         else:
             try:
