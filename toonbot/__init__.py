@@ -1,5 +1,5 @@
-import re
-import requests
+import aiohttp
+import asyncio
 import textwrap
 import base64
 import urllib
@@ -25,7 +25,9 @@ class ToonBot(Plugin):
             api_url = base_url + '/api/search'
             safe_query = urllib.parse.quote(query)
             search_url = api_url + '?q=' + safe_query
-            frame = requests.get(search_url).json()[0]
+            res = await self.http.get(search_url)
+            frames = await res.json()
+            frame = frames[0]
         except IndexError as err:
             await evt.respond(f"Search term \"{safe_query}\" was not found.")
         except BaseException as err:
@@ -37,7 +39,8 @@ class ToonBot(Plugin):
                 episode = frame['Episode']
                 timestamp = str(frame['Timestamp'])
                 caption_search_url = caption_url + '?e=' + episode + '&t=' + timestamp
-                captions_json = requests.get(caption_search_url).json()
+                res = await self.http.get(caption_search_url)
+                captions_json = await res.json()
             except BaseException as err:
                 await evt.respond(f"Error getting captions from URL \"{caption_search_url}\": {err=}, {type(err)=}")
                 raise
@@ -47,7 +50,8 @@ class ToonBot(Plugin):
                     captions_wrapped = "\n".join(textwrap.wrap(raw_caption_text, 25))
                     captions_encoded = urllib.parse.quote(base64.b64encode(captions_wrapped.encode('utf-8')))
                     meme_url = base_url + '/meme/' + episode + '/' + timestamp + '.jpg?b64lines=' + captions_encoded
-                    meme_binary = requests.get(meme_url).content
+                    res = await self.http.get(meme_url)
+                    meme_binary = await res.read()
                 except BaseException as err:
                     await evt.respond(f"Error getting image from URL \"{meme_url}\": {err=}, {type(err)=}")
                     raise
